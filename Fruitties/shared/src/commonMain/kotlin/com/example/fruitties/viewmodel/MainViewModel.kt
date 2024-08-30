@@ -18,6 +18,7 @@ package com.example.fruitties.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
@@ -81,3 +82,5 @@ data class HomeUiState(val itemList: List<Fruittie> = listOf())
 data class CartUiState(val itemList: List<CartItemDetails> = listOf())
 
 private const val TIMEOUT_MILLIS = 5_000L
+
+val hack: ViewModelStoreOwner? = null

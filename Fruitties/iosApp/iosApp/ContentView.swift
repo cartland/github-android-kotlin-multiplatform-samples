@@ -18,10 +18,21 @@ import SwiftUI
 import shared
 import Foundation
 
+// Implementation of KMP ViewModelStoreOwner.
+class MyViewModelStoreOwner: shared.Lifecycle_viewmodelViewModelStoreOwner {
+    private let _viewModelStore = shared.Lifecycle_viewmodelViewModelStore()
+    var viewModelStore: shared.Lifecycle_viewmodelViewModelStore {
+        return _viewModelStore
+    }
+}
+
 struct ContentView: View {
     @ObservedObject var uiModel: UIModel
+    let vmsOwner: MyViewModelStoreOwner
+
     init(appContainer: AppContainer) {
         self.uiModel = UIModel(dataRepository: appContainer.dataRepository)
+        self.vmsOwner = MyViewModelStoreOwner()
     }
 
     var body: some View {
