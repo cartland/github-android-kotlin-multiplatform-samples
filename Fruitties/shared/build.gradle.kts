@@ -155,3 +155,49 @@ skie {
         enableSwiftUIObservingPreview = true
     }
 }
+
+/**
+ * Registers a Gradle task named `createXcFileList` to help Xcode discover KMP source files.
+ *
+ * **Purpose**: This task helps reduce unnecessary compilation for iOS builds.
+ * This task generates a file (`.xcfilelist`) containing a complete list of all
+ * relevant Kotlin source files and Gradle build scripts.
+ * The iOS project uses this task to generate a file list, then watches the file list to determine
+ * if the shared framework needs to be rebuilt.
+ *
+ * **Xcode Build Phases**: This task and the output file are used in two Build Phases.
+ *   - "Generate KMP Source List": This phase runs the `createXcFileList` task.
+ *       - Script: ./gradlew :shared:createXcFileList
+ *       - Output: `shared/build/xcode-inputs/shared-sources.xcfilelist`
+ *   - "Compile Kotlin Multiplatform": This phase watches the output file and rebuilds the framework.
+ *       - Input: $(SRCROOT)/../shared/build/xcode-inputs/shared-sources.xcfilelist
+ *       - Script: ./gradlew :shared:embedAndSignAppleFrameworkForXcode
+ *       - Output: $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/shared.framework
+ *
+ * **Problem Solved**: Xcode has no visibility into the KMP source set.
+ * It cannot automatically detect when a `.kt` file has changed. Without this script, we should
+ * always run
+ * ./gradlew :shared:embedAndSignAppleFrameworkForXcode
+ * even if none of the source files have changed.
+ */
+tasks.register("createXcFileList") {
+    val sources = fileTree("src").apply {
+        include("**/*.kt")
+    }
+
+    // Include the Gradle build files themselves as inputs
+    val buildFiles = project.rootProject.fileTree(".").apply {
+        include("**/build.gradle.kts")
+        include("**/settings.gradle.kts")
+    }
+
+    val outputFileProvider = layout.buildDirectory.file("xcode-inputs/shared-sources.xcfilelist")
+
+    doLast {
+        // Resolve the final File object inside the task action
+        val outputFile = outputFileProvider.get().asFile
+
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText((sources + buildFiles).joinToString("\n") { it.absolutePath })
+    }
+}
